@@ -4,7 +4,7 @@
 
 Zero-dependency Python 3.8+ implementation (standard library only).
 
-Scope (v0.1.0):
+Scope (v0.1.1):
   - npm   : package.json + package-lock.json (v1/v2/v3) + npm-shrinkwrap.json + .npmrc
   - python: requirements*.txt + pyproject.toml (PEP 621 / poetry) + poetry.lock
             + Pipfile / Pipfile.lock
@@ -35,7 +35,7 @@ try:
 except Exception:
     pass
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 SEVERITY_ORDER = ["info", "low", "medium", "high"]
 SEVERITY_RANK = {s: i for i, s in enumerate(SEVERITY_ORDER)}

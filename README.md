@@ -81,15 +81,53 @@ python3 scripts/yotta_chain.py version
 
 ## Installation
 
-Install the skill into your agent:
+Pick any of the three methods; skill files are always fetched from **npm** (GitHub can be slow without a proxy; npm supports mirrors).
 
-| Method | Command |
-|---|---|
-| npm (recommended) | `npx -y @yottameta/yotta-chain --agent codex` (or `--dir <path>` / `-g`) |
-| Shell script | `bash install.sh --agent <name>` (see `bash install.sh --list`) |
-| Manual | Copy the skill folder into your agent's skills directory |
+### Method 1: npm (recommended, one-liner)
+```bash
+# Optional China mirror: npm config set registry https://registry.npmmirror.com
+npx -y @yottameta/yotta-chain -g
+npx -y @yottameta/yotta-chain --dir <your skills dir>   # any agent: install to a custom directory
+```
+> Agent not in the preset list? Use `--dir` to point at its skills directory, or copy manually (Method 3). `--list` shows the default directory of each agent.
 
-Installing into a project: run `npx -y @yottameta/yotta-chain` or `bash install.sh` inside the project to install into the detected project-level directory.
+### Method 2: install.sh
+After obtaining the skill folder (`npm pack` unpack or `git clone`), enter the folder:
+```bash
+bash install.sh -g    # user-level; bash install.sh --list shows all directories
+bash install.sh --agent codex   # a specific agent (see --list)
+bash install.sh       # project-level: auto-detect existing skills directories
+bash install.sh --dir /path/to/skills
+```
+> Covers 17 agent families, including Trae / Qwen / Comate / CodeBuddy / Kimi.
+
+### Method 3: manual copy
+Copy the whole `yotta-chain` folder into the target agent's skills directory. Common user-level locations (`%USERPROFILE%` on Windows, `~` on Linux/macOS):
+
+| Agent | User-level directory | Project-level directory |
+|---|---|---|
+| Codex | `%USERPROFILE%\.codex\skills\yotta-chain\` | `.codex\skills\` |
+| Claude Code | `%USERPROFILE%\.claude\skills\yotta-chain\` | `.claude\skills\` |
+| Cursor | `%USERPROFILE%\.cursor\skills\yotta-chain\` | `.cursor\skills\` |
+| Windsurf | `%USERPROFILE%\.codeium\windsurf\skills\yotta-chain\` | `.windsurf\skills\` |
+| opencode | `%USERPROFILE%\.config\opencode\skills\yotta-chain\` | `.opencode\skills\` |
+| Gemini | `%USERPROFILE%\.gemini\skills\yotta-chain\` | `.gemini\skills\` |
+| Goose | `%USERPROFILE%\.config\goose\skills\yotta-chain\` | `.goose\skills\` |
+| Amp | `%USERPROFILE%\.config\agents\skills\yotta-chain\` | `.agents\skills\` |
+| Kiro | `%USERPROFILE%\.kiro\skills\yotta-chain\` | `.kiro\skills\` |
+| WorkBuddy | `%USERPROFILE%\.workbuddy\skills\yotta-chain\` | `.workbuddy\skills\` |
+| Trae Code CLI | `%USERPROFILE%\.traecli\skills\yotta-chain\` | `.traecli\skills\` |
+| Trae IDE (CN) | `%USERPROFILE%\.trae-cn\skills\yotta-chain\` | `.trae\skills\` |
+| Qwen Code | `%USERPROFILE%\.qwen\skills\yotta-chain\` | `.qwen\skills\` |
+| Comate | `%USERPROFILE%\.comate\skills\yotta-chain\` | `.comate\skills\` |
+| CodeBuddy | `%USERPROFILE%\.codebuddy\skills\yotta-chain\` | `.codebuddy\skills\` |
+| Kimi | `%USERPROFILE%\.kimi\skills\yotta-chain\` | `.kimi\skills\` |
+| Generic AGENTS.md | `%USERPROFILE%\.agents\skills\yotta-chain\` | `.agents\skills\` |
+
+> If Codex's `CODEX_HOME` is set, it overrides the default; the same applies to opencode's `XDG_CONFIG_HOME`. `.agents\skills` is not a universal directory — only OpenCode / Cursor / Cline / Amp / Kimi / Gemini CLI / GitHub Copilot etc. read it; **Claude Code and Codex do not read it by default**. When unsure, use `--dir` or let the agent install it.
+
+> Project-level: run `npx -y @yottameta/yotta-chain` or `bash install.sh` inside the project to install into the detected project-level directory.
+
 
 ## Usage with an AI agent
 
@@ -121,12 +159,12 @@ The agent runs the engine, reports findings by severity, and explains each rule 
 | `typosquat` | low | Name within edit distance 2 of a well-known package — review manually |
 | `snapshot` | low | Maven dependency uses a SNAPSHOT version |
 
-## Supported ecosystems (v0.1.0)
+## Supported ecosystems (v0.1.1)
 
 - **npm** — `package.json` + `package-lock.json` (v1 / v2 / v3) / `npm-shrinkwrap.json` + `.npmrc` (per-scope registries);
 - **Python** — `requirements*.txt` (with `--index-url` / `--extra-index-url` / `-r` recursion), `pyproject.toml` (PEP 621 / poetry), `poetry.lock`, `Pipfile` / `Pipfile.lock`;
 - **Maven** — `pom.xml` (basic: unpinned / SNAPSHOT / suspicious repository URLs / property + dependencyManagement resolution).
-- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` are not yet supported in v0.1.0 (see CHANGELOG).
+- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` are not yet supported in v0.1.1 (see CHANGELOG).
 
 ## Boundaries
 

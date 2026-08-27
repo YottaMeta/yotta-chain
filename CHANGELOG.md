@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-08-27)
+
+- 修复：README 安装方式统一为三方式（方式一 npx `-g` / `--dir` 指定目录，方式二 install.sh（`--agent` 仅示例用），方式三手动复制+目录表），删除 npx 固定 `--agent codex` 的写法；README 中英双版同步。
+- 对齐：package.json / SKILL.md / CHANGELOG / README / references/rules.md 的版本锚点统一到 v0.1.1；引擎 `version` 输出与测试断言同步。
+- 引擎无功能变更，测试保持 52/52。
+
 ## 0.1.0 (2026-08-27)
 
 - 初始版本：零依赖供应链依赖校验引擎（Python 3.8+ 标准库，纯本地离线）。
