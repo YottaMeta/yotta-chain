@@ -139,7 +139,7 @@ python3 scripts/yotta_chain.py version
 
 ```bash
 python3 -m py_compile scripts/yotta_chain.py
-python3 scripts/test_yotta_chain.py   # 47/47
+python3 scripts/test_yotta_chain.py   # 52/52
 ```
 
 ## Changelog

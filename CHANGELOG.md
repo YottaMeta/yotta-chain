@@ -15,4 +15,4 @@
   - typo-squat：依赖名与知名 npm / PyPI 包编辑距离 ≤ 2 提示。
 - SBOM-lite：CycloneDX 1.5 子集 JSON（components + dependencies + purl，scope / direct / resolved / integrity）。
 - 输出：text / JSON / CSV；scan 退出码 0（干净）/ 1（有发现）/ 4（错误），--gate 可调 CI 闸门。
-- 测试：47/47 全绿。
+- 测试：52/52 全绿。

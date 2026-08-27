@@ -550,5 +550,67 @@ class TestCli(unittest.TestCase):
         self.assertEqual(yc.VERSION, "0.1.0")
 
 
+class TestNpmLockV1(unittest.TestCase):
+    def test_v1_parse_and_clean(self):
+        lock_v1 = {
+            "name": "demo",
+            "version": "1.0.0",
+            "lockfileVersion": 1,
+            "dependencies": {
+                "lodash": {"version": "4.17.21",
+                           "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+                           "integrity": "sha512-aaa"},
+                "@corp/secret": {"version": "1.0.0",
+                                 "resolved": "https://registry.npmjs.org/@corp/secret.tgz",
+                                 "integrity": "sha512-bbb",
+                                 "requires": {"lodash": "^4.0.0"}},
+            },
+        }
+        parsed = yc.parse_package_lock(json.dumps(lock_v1))
+        self.assertEqual(parsed["lockfileVersion"], 1)
+        self.assertIn("lodash", parsed["packages"])
+        self.assertIn("@corp/secret", parsed["packages"])
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "demo", "version": "1.0.0",
+                    "dependencies": {"lodash": "^4.17.21", "@corp/secret": "^1.0.0"}}),
+                "package-lock.json": json.dumps(lock_v1),
+            })
+            _, findings = scan_dir(td)
+            self.assertEqual(findings, [])
+
+    def test_v1_dangling_requires(self):
+        lock_v1 = {
+            "name": "demo", "version": "1.0.0", "lockfileVersion": 1,
+            "dependencies": {
+                "pkg-a": {"version": "1.0.0",
+                          "resolved": "https://registry.npmjs.org/pkg-a.tgz",
+                          "requires": {"ghost": "^1.0.0"}},
+            },
+        }
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({"name": "demo", "dependencies": {"pkg-a": "^1.0.0"}}),
+                "package-lock.json": json.dumps(lock_v1),
+            })
+            _, findings = scan_dir(td)
+            self.assertTrue(has(findings, "lockfile_dangling_ref"))
+
+
+class TestPep440Edge(unittest.TestCase):
+    def test_not_equal(self):
+        self.assertFalse(yc.pep440_satisfies("2.31.0", "!=2.31.0"))
+        self.assertTrue(yc.pep440_satisfies("2.30.0", "!=2.31.0"))
+
+    def test_dev_order(self):
+        self.assertTrue(yc.pep440_satisfies("1.0.0.dev1", "<1.0.0"))
+        self.assertTrue(yc.pep440_satisfies("1.0.0rc1", "<1.0.0"))
+        self.assertFalse(yc.pep440_satisfies("1.0.0", "<1.0.0"))
+
+    def test_post(self):
+        self.assertTrue(yc.pep440_satisfies("1.0.0.post1", ">=1.0.0"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
