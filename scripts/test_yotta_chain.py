@@ -115,7 +115,7 @@ class TestToml(unittest.TestCase):
         doc = '''
 [project]
 name = "demo"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
     "requests>=2.28",
     'flask<3.0',
@@ -547,7 +547,7 @@ class TestCli(unittest.TestCase):
             self.assertEqual(data["bomFormat"], "CycloneDX")
 
     def test_version(self):
-        self.assertEqual(yc.VERSION, "0.1.1")
+        self.assertEqual(yc.VERSION, "0.1.2")
 
 
 class TestNpmLockV1(unittest.TestCase):

@@ -81,54 +81,39 @@ python3 scripts/yotta_chain.py version
 
 ## 安装
 
-三种方式任选其一，技能文件统一从 **npm** 获取（GitHub 无代理时较慢，npm 可配国内镜像加速）。
+以下四种方式任选，顺序即推荐优先级；技能文件一律从 **npm** 获取（GitHub 无代理较慢，npm 支持镜像）。
 
-### 方式一：npm（推荐，一行安装）
-```bash
-# 国内加速（可选）：npm config set registry https://registry.npmmirror.com
-npx -y @yottameta/yotta-chain -g
-npx -y @yottameta/yotta-chain --dir <你的技能目录>   # 任意智能体：指定目录安装
+### 方式一：npm 一行装（推荐）
+
+```text
+# 可选国内加速：npm config set registry https://registry.npmmirror.com
+npx -y @yottameta/yotta-chain --agent <智能体名称>      # 装到指定智能体默认用户级技能目录
+npx -y @yottameta/yotta-chain --dir <智能体的技能目录>  # 指到技能目录本身（如 ~/.codex/skills）
 ```
-> 智能体不在预置列表里？用 `--dir` 指定它的 skills 目录，或手动复制（方式三）。`--list` 可查看各智能体对应的默认目录。想手动拿文件也可 `npm pack @yottameta/yotta-chain` 解包后按方式二/三安装。
 
-### 方式二：install.sh 一键安装
-获取技能文件夹后（`npm pack` 解包或 `git clone`），进入技能文件夹：
-```bash
-bash install.sh -g    # 用户级；bash install.sh --list 查看全部目录
-bash install.sh --agent codex   # 指定智能体（--list 可查看可用项）
-bash install.sh       # 项目级：自动检测已存在的 .claude/.cursor/.codex 等 skills 目录
-bash install.sh --dir /path/to/skills
+- `--agent <name>` 自动装到该智能体默认用户级目录；`--list` 可查看各智能体默认目录。
+- `--dir <路径>` 装到指定的技能目录；未收录的智能体用 `--dir` 指到它的技能目录。
+- npmmirror 未同步新包（404）：加 `--registry=https://registry.npmjs.org/`（国内需代理），或稍等镜像缓存。
+
+### 方式二：git clone（开发者 / 有 git 环境）
+
+```text
+git clone https://github.com/YottaMeta/yotta-chain.git <智能体的技能目录>/yotta-chain
 ```
-> 覆盖 17 类智能体，含国内 Trae / Qwen / Comate / CodeBuddy / Kimi。Windows 用户：装有 Git Bash 即可用；否则用方式三手动复制。
 
-### 方式三：手动复制
-把整个 `yotta-chain` 文件夹复制到目标智能体的 skills 目录。常见位置（用户级；Windows 用 `%USERPROFILE%`，Linux/macOS 用 `~`）：
+### 方式三：GitHub 下载压缩包（手动 / 无 git 环境）
 
-| 智能体 | 用户级目录 | 项目级目录 |
-|---|---|---|
-| Codex | `%USERPROFILE%\.codex\skills\yotta-chain\` | `.codex\skills\` |
-| Claude Code | `%USERPROFILE%\.claude\skills\yotta-chain\` | `.claude\skills\` |
-| Cursor | `%USERPROFILE%\.cursor\skills\yotta-chain\` | `.cursor\skills\` |
-| Windsurf | `%USERPROFILE%\.codeium\windsurf\skills\yotta-chain\` | `.windsurf\skills\` |
-| opencode | `%USERPROFILE%\.config\opencode\skills\yotta-chain\` | `.opencode\skills\` |
-| Gemini | `%USERPROFILE%\.gemini\skills\yotta-chain\` | `.gemini\skills\` |
-| Goose | `%USERPROFILE%\.config\goose\skills\yotta-chain\` | `.goose\skills\` |
-| Amp | `%USERPROFILE%\.config\agents\skills\yotta-chain\` | `.agents\skills\` |
-| Kiro | `%USERPROFILE%\.kiro\skills\yotta-chain\` | `.kiro\skills\` |
-| WorkBuddy | `%USERPROFILE%\.workbuddy\skills\yotta-chain\` | `.workbuddy\skills\` |
-| Trae Code CLI | `%USERPROFILE%\.traecli\skills\yotta-chain\` | `.traecli\skills\` |
-| Trae IDE（国内） | `%USERPROFILE%\.trae-cn\skills\yotta-chain\` | `.trae\skills\` |
-| Qwen Code | `%USERPROFILE%\.qwen\skills\yotta-chain\` | `.qwen\skills\` |
-| Comate | `%USERPROFILE%\.comate\skills\yotta-chain\` | `.comate\skills\` |
-| CodeBuddy | `%USERPROFILE%\.codebuddy\skills\yotta-chain\` | `.codebuddy\skills\` |
-| Kimi | `%USERPROFILE%\.kimi\skills\yotta-chain\` | `.kimi\skills\` |
-| 通用 AGENTS.md | `%USERPROFILE%\.agents\skills\yotta-chain\` | `.agents\skills\` |
+在 GitHub 仓库 `YottaMeta/yotta-chain` 点 **Code → Download ZIP**，解压后把 `yotta-chain` 文件夹放进智能体技能目录。
 
-> 若设置了 Codex 的 `CODEX_HOME`，安装自动以该变量为准；opencode 同理（`XDG_CONFIG_HOME`）。`.agents\skills` 不是通用目录——仅 OpenCode / Cursor / Cline / Amp / Kimi / Gemini CLI / GitHub Copilot 等读取；**Claude Code 与 Codex 默认不读**。不确定时用 `--dir` 或让智能体自行安装。
+### 方式四：install.sh（多智能体一键脚本）
 
-> 装到项目：在项目内运行 `npx -y @yottameta/yotta-chain` 或 `bash install.sh`，会装到检测到的项目级目录。
+```text
+bash install.sh --agent <name>   # 装到指定智能体默认用户级目录
+bash install.sh --dir <path>     # 装到指定目录
+bash install.sh --list           # 列出智能体 -> 默认目录
+```
 
-
+> 方式一走 npm 源（npmmirror / npmjs），不依赖 GitHub；方式二 / 三走 GitHub，国内无代理可能失败。
 ## 让智能体使用
 
 给智能体下指令即可，例如：
@@ -159,12 +144,12 @@ bash install.sh --dir /path/to/skills
 | `typosquat` | low | 名字与知名包编辑距离 ≤ 2，疑似拼写仿冒 |
 | `snapshot` | low | Maven 依赖使用 SNAPSHOT 版本 |
 
-## 支持的生态（v0.1.1）
+## 支持的生态（v0.1.2）
 
 - **npm** — `package.json` + `package-lock.json`（v1 / v2 / v3）/ `npm-shrinkwrap.json` + `.npmrc`（作用域仓库映射）；
 - **Python** — `requirements*.txt`（含 `--index-url` / `--extra-index-url` / `-r` 递归）、`pyproject.toml`（PEP 621 / poetry）、`poetry.lock`、`Pipfile` / `Pipfile.lock`；
 - **Maven** — `pom.xml`（基础：未固定版本 / SNAPSHOT / 可疑仓库 URL / 属性与 dependencyManagement 解析）。
-- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` v0.1.1 暂不支持（见 CHANGELOG）。
+- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` v0.1.2 暂不支持（见 CHANGELOG）。
 
 ## 边界
 
