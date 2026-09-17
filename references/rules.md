@@ -88,8 +88,8 @@
 
 ### missing_lockfile（medium）
 
-- 触发：声明了依赖但没有锁文件（package.json 无 package-lock.json / npm-shrinkwrap.json；pyproject.toml 或 Pipfile 无 poetry.lock / Pipfile.lock）。
-- 修复：提交锁文件并使用 `npm ci` / `poetry install --locked` / `pipenv install --deploy` 保证可复现。
+- 触发：声明了依赖但没有锁文件（package.json 无 package-lock.json / npm-shrinkwrap.json / yarn.lock / pnpm-lock.yaml / bun.lock；pyproject.toml 或 Pipfile 无 poetry.lock / uv.lock / Pipfile.lock）。
+- 修复：提交锁文件并使用 `npm ci` / `yarn install --immutable` / `pnpm install --frozen-lockfile` / `uv sync --locked` / `poetry install --locked` / `pipenv install --deploy` 保证可复现。
 
 ### unpinned（low / medium）
 
@@ -115,10 +115,10 @@
 - **npm semver**：`^` `~` `>=` `<=` `>` `<` `=`、x 范围（`1.x` / `1.2.x`）、`*`、`||` 或、连字符范围（`1.2.3 - 2.3.4`）、预发布规则（预发布版本默认不满足不含预发布的比较器）。
 - **PEP 440**：`==` `!=` `>=` `<=` `>` `<` `~=` `===`、逗号 AND、`||` 或、`==1.2.*` 通配；`~=1.2` = `>=1.2,==1.2.*`。
 
-## 六、已知限制（v0.1.2）
+## 六、已知限制（v0.1.3）
 
 - 不做在线 CVE 比对（那是 snyk / trivy / npm audit 的地盘）。
 - 依赖混淆为本地近似：真正确认「私有包名被公共仓库抢占」需要在线核对，引擎给强信号供人工复核。
-- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` 未支持（见 CHANGELOG 后续计划）。
+- `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` / `uv.lock` 做基础一致性解析；`bun.lockb` 只识别不深度解析，`go.mod` / `Cargo.lock` 未支持。
 - 只扫描给定目录（不递归子目录 monorepo）；`-r` 递归的 requirements 会跟随（深度 ≤ 5）。
 - 不读用户级 `.npmrc` / `pip.conf`（只读项目内配置），避免触碰项目外数据。

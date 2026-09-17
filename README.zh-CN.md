@@ -144,12 +144,12 @@ bash install.sh --list           # 列出智能体 -> 默认目录
 | `typosquat` | low | 名字与知名包编辑距离 ≤ 2，疑似拼写仿冒 |
 | `snapshot` | low | Maven 依赖使用 SNAPSHOT 版本 |
 
-## 支持的生态（v0.1.2）
+## 支持的生态（v0.1.3）
 
-- **npm** — `package.json` + `package-lock.json`（v1 / v2 / v3）/ `npm-shrinkwrap.json` + `.npmrc`（作用域仓库映射）；
-- **Python** — `requirements*.txt`（含 `--index-url` / `--extra-index-url` / `-r` 递归）、`pyproject.toml`（PEP 621 / poetry）、`poetry.lock`、`Pipfile` / `Pipfile.lock`；
+- **npm** — `package.json` + `package-lock.json`（v1 / v2 / v3）/ `npm-shrinkwrap.json` / `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` + `.npmrc`（作用域仓库映射）；
+- **Python** — `requirements*.txt`（含 `--index-url` / `--extra-index-url` / `-r` 递归）、`pyproject.toml`（PEP 621 / poetry）、`poetry.lock`、`uv.lock`、`Pipfile` / `Pipfile.lock`；
 - **Maven** — `pom.xml`（基础：未固定版本 / SNAPSHOT / 可疑仓库 URL / 属性与 dependencyManagement 解析）。
-- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` v0.1.2 暂不支持（见 CHANGELOG）。
+- `bun.lockb` 只识别不深度解析；`go.mod` / `Cargo.lock` 暂不支持。
 
 ## 边界
 

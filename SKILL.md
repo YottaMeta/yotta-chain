@@ -1,7 +1,7 @@
 ---
 name: yotta-chain
-version: 0.1.2
-description: 元链 —— 跨智能体的供应链依赖校验技能：零依赖自研引擎本地解析 npm（package.json / package-lock v1-v3 / .npmrc）与 Python（requirements / pyproject.toml / poetry.lock / Pipfile）及 Maven pom.xml，检测依赖混淆（私有包名被公共仓库同名抢占 / 混合仓库 / 可疑仓库 URL / extra-index 回退）、lockfile 与清单不一致、缺失锁文件、未固定版本、typo-squat 仿冒命名，并生成 SBOM-lite（CycloneDX 1.5 子集）。触发：用户要在构建 / 发布 / CI 前检查项目依赖是否存在供应链风险、核对锁文件与清单是否一致、排查依赖混淆风险或生成 SBOM 时。边界：纯本地离线解析，不做在线 CVE 比对、不查询公共包仓库、不发送任何数据；结果只是「需人工复核的风险信号」，是否真实需人工核实；仅用于已获授权 / 自有资产 / 教学环境。
+version: 0.1.3
+description: 元链 —— 跨智能体的供应链依赖校验技能：零依赖自研引擎本地解析 npm（package.json / package-lock v1-v3 / yarn.lock / pnpm-lock.yaml / bun.lock / .npmrc）与 Python（requirements / pyproject.toml / poetry.lock / uv.lock / Pipfile）及 Maven pom.xml，检测依赖混淆（私有包名被公共仓库同名抢占 / 混合仓库 / 可疑仓库 URL / extra-index 回退）、lockfile 与清单不一致、缺失锁文件、未固定版本、typo-squat 仿冒命名，并生成 SBOM-lite（CycloneDX 1.5 子集）。触发：用户要在构建 / 发布 / CI 前检查项目依赖是否存在供应链风险、核对锁文件与清单是否一致、排查依赖混淆风险或生成 SBOM 时。边界：纯本地离线解析，不做在线 CVE 比对、不查询公共包仓库、不发送任何数据；结果只是「需人工复核的风险信号」，是否真实需人工核实；仅用于已获授权 / 自有资产 / 教学环境。
 license: MIT
 ---
 
@@ -17,7 +17,7 @@ license: MIT
 ## 何时使用
 
 - 构建 / 发布 / CI 前检查项目依赖是否存在供应链风险；
-- 核对 package-lock.json / poetry.lock / Pipfile.lock 与清单是否一致；
+- 核对 package-lock.json / yarn.lock / pnpm-lock.yaml / bun.lock / poetry.lock / uv.lock / Pipfile.lock 与清单是否一致；
 - 排查依赖混淆暴露面（私有包名 / 混合仓库 / extra-index 公共回退）；
 - 生成 SBOM-lite 用于依赖清单审计与合规留痕。
 
@@ -77,13 +77,13 @@ python3 scripts/yotta_chain.py version
 
 完整规则、判定逻辑与修复指引见 `references/rules.md`。
 
-## 支持的生态（v0.1.2）
+## 支持的生态（v0.1.3）
 
-- **npm**：package.json + package-lock.json（v1 / v2 / v3）/ npm-shrinkwrap.json + .npmrc（作用域仓库映射）；
+- **npm**：package.json + package-lock.json（v1 / v2 / v3）/ npm-shrinkwrap.json / yarn.lock / pnpm-lock.yaml / bun.lock + .npmrc（作用域仓库映射）；
 - **Python**：requirements*.txt（含 --index-url / --extra-index-url / -r 递归）、pyproject.toml（PEP 621 / poetry）、
-  poetry.lock、Pipfile / Pipfile.lock；
+  poetry.lock、uv.lock、Pipfile / Pipfile.lock；
 - **Maven**：pom.xml（基础：未固定版本 / SNAPSHOT / 可疑仓库 URL / dependencyManagement 属性解析）。
-- yarn.lock / pnpm-lock.yaml / go.mod / Cargo.lock：v0.1.2 暂不支持，见 CHANGELOG 后续计划。
+- bun.lockb 会识别为锁文件但不做深度解析；go.mod / Cargo.lock 暂不支持。
 
 ## 与家族协同
 

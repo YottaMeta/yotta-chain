@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 (2026-09-17)
+
+- npm 生态新增 `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` 基础解析，锁文件存在时不再误报 `missing_lockfile`；`bun.lockb` 明确标记 `lockfile_parse_unsupported`，不做不可靠的二进制猜测。
+- Python 生态新增 `uv.lock` 识别与基础一致性校验；`pyproject.toml` 无锁文件提示统一覆盖 `poetry.lock` / `uv.lock`。
+- 新增 5 项锁文件格式回归；版本对齐到 `0.1.3`。
+
 ## v0.1.2 (2026-08-29)
 
 - 安装方式统一为四方式（对齐发布规范 §3.3.1）：方式一 `npx -y @yottameta/yotta-chain --agent <name>` / `--dir <dir>`（推荐，走 npm 源）；方式二 `git clone https://github.com/YottaMeta/yotta-chain.git`；方式三 GitHub Download ZIP；方式四 `bash install.sh --agent/--dir/--list`。移除 `npx skills` 与 `-g` 推荐；中英双 README 安装节同步。

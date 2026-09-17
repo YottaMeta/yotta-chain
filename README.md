@@ -144,12 +144,12 @@ The agent runs the engine, reports findings by severity, and explains each rule 
 | `typosquat` | low | Name within edit distance 2 of a well-known package — review manually |
 | `snapshot` | low | Maven dependency uses a SNAPSHOT version |
 
-## Supported ecosystems (v0.1.2)
+## Supported ecosystems (v0.1.3)
 
-- **npm** — `package.json` + `package-lock.json` (v1 / v2 / v3) / `npm-shrinkwrap.json` + `.npmrc` (per-scope registries);
-- **Python** — `requirements*.txt` (with `--index-url` / `--extra-index-url` / `-r` recursion), `pyproject.toml` (PEP 621 / poetry), `poetry.lock`, `Pipfile` / `Pipfile.lock`;
+- **npm** — `package.json` + `package-lock.json` (v1 / v2 / v3) / `npm-shrinkwrap.json` / `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` + `.npmrc` (per-scope registries);
+- **Python** — `requirements*.txt` (with `--index-url` / `--extra-index-url` / `-r` recursion), `pyproject.toml` (PEP 621 / poetry), `poetry.lock`, `uv.lock`, `Pipfile` / `Pipfile.lock`;
 - **Maven** — `pom.xml` (basic: unpinned / SNAPSHOT / suspicious repository URLs / property + dependencyManagement resolution).
-- `yarn.lock` / `pnpm-lock.yaml` / `go.mod` / `Cargo.lock` are not yet supported in v0.1.2 (see CHANGELOG).
+- `bun.lockb` is recognized but not deeply parsed; `go.mod` / `Cargo.lock` are not yet supported.
 
 ## Boundaries
 

@@ -35,7 +35,7 @@ try:
 except Exception:
     pass
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 SEVERITY_ORDER = ["info", "low", "medium", "high"]
 SEVERITY_RANK = {s: i for i, s in enumerate(SEVERITY_ORDER)}
@@ -817,6 +817,187 @@ def _v1_name(key):
     return key.split("@")[0]
 
 
+def _descriptor_name_version(descriptor):
+    """Split an npm descriptor such as @scope/pkg@1.2.3 or lodash@^4."""
+    s = str(descriptor or "").strip().strip("\"'")
+    if not s:
+        return None, None
+    if s.startswith("@"):
+        slash = s.find("/")
+        at = s.find("@", slash + 1) if slash >= 0 else -1
+        if at > slash:
+            return s[:at], s[at + 1:].split("(", 1)[0]
+    at = s.rfind("@")
+    if at > 0:
+        return s[:at], s[at + 1:].split("(", 1)[0]
+    return s, None
+
+
+def _jsonc_load(text):
+    """Parse the JSONC-like bun text lockfile without third-party modules."""
+    cleaned = re.sub(r"(?m)^\s*//.*$", "", text or "")
+    cleaned = re.sub(r",(\s*[}\]])", r"\1", cleaned)
+    return json.loads(cleaned)
+
+
+def parse_yarn_lock(text):
+    """Parse the name/version/resolved/integrity subset of yarn.lock."""
+    packages = {}
+    current = None
+    for raw in (text or "").splitlines():
+        if raw and not raw.startswith((" ", "\t", "#")) and raw.rstrip().endswith(":"):
+            descriptor_text = raw.rstrip()[:-1]
+            current = None
+            for item in descriptor_text.split(","):
+                name, _ = _descriptor_name_version(item)
+                if not name:
+                    continue
+                current = name
+                packages.setdefault(name, [])
+                break
+            continue
+        if current is None:
+            continue
+        m = re.match(r"^\s+version\s+\"?([^\"\s]+)\"?\s*$", raw)
+        if m:
+            entry = {"version": m.group(1), "resolved": None, "integrity": None,
+                     "dev": False, "optional": False, "deps": {}, "key": current}
+            packages.setdefault(current, []).append(entry)
+            continue
+        if not packages.get(current):
+            continue
+        entry = packages[current][-1]
+        m = re.match(r"^\s+resolved\s+\"?([^\"\s]+)\"?\s*$", raw)
+        if m:
+            entry["resolved"] = m.group(1)
+            continue
+        m = re.match(r"^\s+integrity\s+\"?([^\"\s]+)\"?\s*$", raw)
+        if m:
+            entry["integrity"] = m.group(1)
+    return {"lockfileVersion": None, "root": {}, "packages": packages}
+
+
+def _pnpm_key_name_version(key):
+    s = str(key or "").strip().strip("\"'").split("(", 1)[0]
+    if not s:
+        return None, None
+    if s.startswith("/"):
+        s = s[1:]
+    if s.startswith("@"):
+        slash = s.find("/")
+        at = s.rfind("@")
+        if slash >= 0 and at > slash:
+            return s[:at], s[at + 1:]
+        if slash >= 0:
+            name, _, version = s.rpartition("/")
+            return (name, version) if version else (None, None)
+        return None, None
+    if "@" in s:
+        name, _, version = s.rpartition("@")
+        return (name, version) if name and version else (None, None)
+    if "/" in s:
+        name, _, version = s.rpartition("/")
+        return (name, version) if name and version else (None, None)
+    return None, None
+
+
+def parse_pnpm_lock(text):
+    """Parse common pnpm-lock.yaml package keys without a YAML dependency."""
+    packages = {}
+    current = None
+    in_packages = False
+    lock_version = None
+    for raw in (text or "").splitlines():
+        m = re.match(r"^lockfileVersion:\s*['\"]?([^'\"\s]+)", raw)
+        if m:
+            try:
+                lock_version = int(float(m.group(1)))
+            except ValueError:
+                lock_version = m.group(1)
+            continue
+        if re.match(r"^packages:\s*$", raw):
+            in_packages = True
+            continue
+        if in_packages and raw and not raw.startswith((" ", "\t")):
+            in_packages = False
+            current = None
+            continue
+        if not in_packages:
+            continue
+        m = re.match(r"^\s{2}(['\"]?)(.+?)\1:\s*$", raw)
+        if m:
+            name, version = _pnpm_key_name_version(m.group(2))
+            if name and version and version[:1].isdigit():
+                current = name
+                packages.setdefault(name, []).append({
+                    "version": version, "resolved": None, "integrity": None,
+                    "dev": False, "optional": False, "deps": {}, "key": m.group(2),
+                })
+            else:
+                current = None
+            continue
+        if current and packages.get(current):
+            m = re.search(r"integrity:\s*([^,}\s]+)", raw)
+            if m:
+                packages[current][-1]["integrity"] = m.group(1).strip("\"'")
+    return {"lockfileVersion": lock_version, "root": {}, "packages": packages}
+
+
+def parse_bun_lock(text):
+    """Parse bun.lock (JSONC-like text). bun.lockb is intentionally unsupported."""
+    try:
+        data = _jsonc_load(text)
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    packages = {}
+    for key, ent in (data.get("packages") or {}).items():
+        name = None
+        version = None
+        integrity = None
+        if isinstance(ent, list) and ent:
+            name, version = _descriptor_name_version(ent[0])
+            integrity = ent[3] if len(ent) > 3 else None
+        elif isinstance(ent, dict):
+            name = ent.get("name") or key
+            version = ent.get("version")
+            integrity = ent.get("integrity")
+        if not name:
+            name = key
+        packages.setdefault(name, []).append({
+            "version": str(version) if version else None,
+            "resolved": None, "integrity": integrity,
+            "dev": False, "optional": False, "deps": {}, "key": key,
+        })
+    workspace = (data.get("workspaces") or {}).get("") or {}
+    root = {
+        "name": workspace.get("name") or data.get("name"),
+        "version": workspace.get("version") or data.get("version"),
+    }
+    return {"lockfileVersion": data.get("lockfileVersion"), "root": root, "packages": packages}
+
+
+def _select_npm_lockfile(base, pj):
+    manager = str(pj.get("packageManager") or "").split("@", 1)[0].lower()
+    by_manager = {
+        "npm": ("package-lock.json", "npm-shrinkwrap.json"),
+        "yarn": ("yarn.lock",),
+        "pnpm": ("pnpm-lock.yaml",),
+        "bun": ("bun.lock", "bun.lockb"),
+    }
+    candidates = list(by_manager.get(manager, ()))
+    for name in ("package-lock.json", "npm-shrinkwrap.json", "yarn.lock",
+                 "pnpm-lock.yaml", "bun.lock", "bun.lockb"):
+        if name not in candidates:
+            candidates.append(name)
+    for name in candidates:
+        path = base / name
+        if path.is_file():
+            return path
+    return None
+
+
 def parse_package_lock(text):
     """Parse package-lock.json / npm-shrinkwrap.json.
 
@@ -894,27 +1075,36 @@ def check_npm(project_dir, findings, sbom_pkgs):
     if isinstance(pub_cfg, dict) and pub_cfg.get("registry"):
         npmrc["registry"] = npmrc["registry"] or pub_cfg["registry"]
 
-    lock_path = None
-    for cand in ("package-lock.json", "npm-shrinkwrap.json"):
-        if (base / cand).exists():
-            lock_path = base / cand
-            break
-
+    lock_path = _select_npm_lockfile(base, pj)
     if lock_path is None:
         if manifest_deps:
             findings.append(Finding(
                 "missing_lockfile", "medium", "package.json", None,
-                "缺少锁文件（package-lock.json / npm-shrinkwrap.json）",
-                "依赖版本未锁定，安装结果不可复现；建议提交 package-lock.json 并使用 npm ci", ecosystem="npm"))
+                "缺少锁文件（支持 package-lock.json / npm-shrinkwrap.json / yarn.lock / pnpm-lock.yaml / bun.lock）",
+                "依赖版本未锁定，安装结果不可复现；建议按项目包管理器提交对应锁文件", ecosystem="npm"))
     else:
-        lock = parse_package_lock(_read_text(lock_path))
-        if lock is None:
+        lock = None
+        if lock_path.name == "bun.lockb":
+            findings.append(Finding(
+                "lockfile_parse_unsupported", "info", lock_path.name, None,
+                "检测到 bun.lockb，但二进制锁文件本版本不做深度解析",
+                "已按锁文件存在处理，不误报 missing_lockfile；需要深度一致性校验时请改用 bun.lock 文本锁文件", ecosystem="npm"))
+        elif lock_path.name in ("package-lock.json", "npm-shrinkwrap.json"):
+            lock = parse_package_lock(_read_text(lock_path))
+        elif lock_path.name == "yarn.lock":
+            lock = parse_yarn_lock(_read_text(lock_path))
+        elif lock_path.name == "pnpm-lock.yaml":
+            lock = parse_pnpm_lock(_read_text(lock_path))
+        elif lock_path.name == "bun.lock":
+            lock = parse_bun_lock(_read_text(lock_path))
+        if lock is None and lock_path.name != "bun.lockb":
             findings.append(Finding(
                 "lockfile_parse_error", "medium", lock_path.name, None,
-                "锁文件解析失败（JSON 不合法或结构异常）",
-                "请用 npm install 重新生成锁文件", ecosystem="npm"))
+                "锁文件解析失败（结构异常或格式不受支持）",
+                "请用对应包管理器重新生成锁文件", ecosystem="npm"))
         else:
-            _check_npm_lock(base, lock_path, lock, pj, manifest_deps, npmrc, findings, sbom_pkgs)
+            if lock is not None:
+                _check_npm_lock(base, lock_path, lock, pj, manifest_deps, npmrc, findings, sbom_pkgs)
 
     for name, info in manifest_deps.items():
         rng = (info["range"] or "").strip()
@@ -1242,17 +1432,27 @@ def check_python(project_dir, findings, sbom_pkgs):
         py = parse_toml(_read_text(pp_path))
         proj_deps, poetry_deps = pyproject_deps(py)
         declared = proj_deps + poetry_deps
-        lock_path = base / "poetry.lock"
-        lock = None
-        if lock_path.exists():
-            lock = parse_toml(_read_text(lock_path))
-        if declared and lock is None:
+        poetry_lock_path = base / "poetry.lock"
+        uv_lock_path = base / "uv.lock"
+        lock_path = None
+        lock_kind = None
+        if poetry_deps and poetry_lock_path.exists():
+            lock_path, lock_kind = poetry_lock_path, "poetry"
+        elif uv_lock_path.exists():
+            lock_path, lock_kind = uv_lock_path, "uv"
+        elif poetry_lock_path.exists():
+            lock_path, lock_kind = poetry_lock_path, "poetry"
+        lock = parse_toml(_read_text(lock_path)) if lock_path is not None else None
+        if declared and lock_path is None:
             findings.append(Finding(
                 "missing_lockfile", "medium", "pyproject.toml", None,
-                "pyproject.toml 声明了 %d 个依赖但没有 poetry.lock" % len(declared),
-                "依赖版本未锁定，安装结果不可复现；建议 poetry lock 并提交 poetry.lock", ecosystem="python"))
+                "pyproject.toml 声明了 %d 个依赖但没有 poetry.lock / uv.lock" % len(declared),
+                "依赖版本未锁定，安装结果不可复现；请按所用工具提交 poetry.lock 或 uv.lock", ecosystem="python"))
         elif lock is not None:
-            _check_poetry_lock(lock, declared, findings, sbom_pkgs)
+            if lock_kind == "poetry":
+                _check_poetry_lock(lock, declared, findings, sbom_pkgs)
+            else:
+                _check_uv_lock(lock, declared, findings, sbom_pkgs)
         for src in poetry_sources(py):
             url = src.get("url")
             if not url:
@@ -1322,6 +1522,59 @@ def _check_poetry_lock(lock, declared, findings, sbom_pkgs):
             "scope": "optional" if p.get("optional") else "required",
             "direct": name in dict(declared),
             "deps": sorted((p.get("dependencies") or {}).keys()),
+        })
+
+
+def _python_dep_name(spec):
+    s = str(spec or "").strip().strip("\"'")
+    if " @ " in s:
+        return s.split(" @ ", 1)[0].strip()
+    if ";" in s:
+        s = s.split(";", 1)[0].strip()
+    return re.split(r"[<>=!~\[\s]", s, 1)[0].strip()
+
+
+def _check_uv_lock(lock, declared, findings, sbom_pkgs):
+    pkgs = {}
+    for p in (lock.get("package") or []):
+        if isinstance(p, dict) and p.get("name"):
+            pkgs[p["name"]] = p
+    for name, spec in declared:
+        p = pkgs.get(name)
+        if p is None:
+            findings.append(Finding(
+                "lockfile_missing_entry", "high", "uv.lock", name,
+                "pyproject.toml 声明了 %s（%s），但 uv.lock 中没有该包" % (name, spec),
+                "锁文件过期或手工改动，运行 uv lock 重新生成", ecosystem="python"))
+            continue
+        ver = str(p.get("version") or "")
+        if ver and spec not in ("", "*") and not pep440_satisfies(ver, spec):
+            findings.append(Finding(
+                "lockfile_range_unsatisfied", "high", "uv.lock", name,
+                "uv.lock 中 %s=%s 不满足 pyproject.toml 声明 %s" % (name, ver, spec),
+                "声明与锁定不一致，安装可能拉取意外版本", ecosystem="python"))
+    for name, p in pkgs.items():
+        deps = p.get("dependencies") or []
+        dep_names = []
+        if isinstance(deps, dict):
+            dep_names = list(deps.keys())
+        elif isinstance(deps, list):
+            dep_names = [_python_dep_name(x) for x in deps if _python_dep_name(x)]
+        for dn in dep_names:
+            if dn not in pkgs:
+                findings.append(Finding(
+                    "lockfile_dangling_ref", "high", "uv.lock", name,
+                    "uv.lock 里 %s 依赖的 %s 不存在于锁文件包列表" % (name, dn),
+                    "依赖图断裂，安装可能失败或行为异常", ecosystem="python"))
+        sbom_pkgs.append({
+            "ecosystem": "python",
+            "name": name,
+            "version": str(p.get("version") or ""),
+            "resolved": "",
+            "integrity": "",
+            "scope": "optional" if p.get("optional") else "required",
+            "direct": name in dict(declared),
+            "deps": dep_names,
         })
 
 

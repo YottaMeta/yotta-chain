@@ -547,7 +547,7 @@ class TestCli(unittest.TestCase):
             self.assertEqual(data["bomFormat"], "CycloneDX")
 
     def test_version(self):
-        self.assertEqual(yc.VERSION, "0.1.2")
+        self.assertEqual(yc.VERSION, "0.1.3")
 
 
 class TestNpmLockV1(unittest.TestCase):
@@ -596,6 +596,106 @@ class TestNpmLockV1(unittest.TestCase):
             })
             _, findings = scan_dir(td)
             self.assertTrue(has(findings, "lockfile_dangling_ref"))
+
+
+class TestAlternateLockfiles(unittest.TestCase):
+    def test_yarn_lock_recognized_and_checked(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "demo",
+                    "dependencies": {"lodash": "^4.17.0"},
+                }),
+                "yarn.lock": (
+                    "# yarn lockfile v1\n\n"
+                    "lodash@^4.17.0:\n"
+                    "  version \"4.17.21\"\n"
+                    "  resolved \"https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz\"\n"
+                    "  integrity sha512-aaa\n"
+                ),
+            })
+            eco, findings = scan_dir(td)
+            self.assertIn("npm", eco)
+            self.assertFalse(has(findings, "missing_lockfile"))
+            self.assertFalse(has(findings, "lockfile_missing_entry"))
+
+    def test_pnpm_lock_recognized_and_missing_entry(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "demo",
+                    "dependencies": {"missing-dep": "^1.0.0"},
+                }),
+                "pnpm-lock.yaml": (
+                    "lockfileVersion: '9.0'\n\n"
+                    "packages:\n"
+                    "  lodash@4.17.21:\n"
+                    "    resolution: {integrity: sha512-aaa}\n"
+                ),
+            })
+            eco, findings = scan_dir(td)
+            self.assertIn("npm", eco)
+            self.assertFalse(has(findings, "missing_lockfile"))
+            self.assertTrue(has(findings, "lockfile_missing_entry"))
+
+    def test_bun_text_lock_recognized(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "demo",
+                    "dependencies": {"lodash": "^4.17.0"},
+                }),
+                "bun.lock": (
+                    "{\n"
+                    "  // Bun text lockfile\n"
+                    "  \"lockfileVersion\": 0,\n"
+                    "  \"packages\": {\n"
+                    "    \"lodash\": [\"lodash@4.17.21\", \"\", {}, \"sha512-aaa\"],\n"
+                    "  },\n"
+                    "}\n"
+                ),
+            })
+            eco, findings = scan_dir(td)
+            self.assertIn("npm", eco)
+            self.assertFalse(has(findings, "missing_lockfile"))
+            self.assertFalse(has(findings, "lockfile_missing_entry"))
+
+    def test_bun_binary_lock_is_explicitly_unsupported(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "demo",
+                    "dependencies": {"lodash": "^4.17.0"},
+                }),
+            })
+            (Path(td) / "bun.lockb").write_bytes(b"\x00bun-lockb\x00")
+            eco, findings = scan_dir(td)
+            self.assertIn("npm", eco)
+            self.assertFalse(has(findings, "missing_lockfile"))
+            self.assertTrue(has(findings, "lockfile_parse_unsupported"))
+
+    def test_uv_lock_recognized_and_checked(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "pyproject.toml": (
+                    "[project]\n"
+                    "name = \"demo\"\n"
+                    "version = \"1.0.0\"\n"
+                    "dependencies = [\"requests>=2.31\"]\n"
+                ),
+                "uv.lock": (
+                    "version = 1\n\n"
+                    "[[package]]\n"
+                    "name = \"requests\"\n"
+                    "version = \"2.32.0\"\n"
+                    "source = { registry = \"https://pypi.org/simple\" }\n"
+                    "dependencies = []\n"
+                ),
+            })
+            eco, findings = scan_dir(td)
+            self.assertIn("python", eco)
+            self.assertFalse(has(findings, "missing_lockfile"))
+            self.assertFalse(has(findings, "lockfile_missing_entry"))
 
 
 class TestPep440Edge(unittest.TestCase):
