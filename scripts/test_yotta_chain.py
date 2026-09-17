@@ -7,6 +7,7 @@ Run:  python3 scripts/test_yotta_chain.py
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -526,6 +527,63 @@ class TestCli(unittest.TestCase):
             write_files(td, {"requirements.txt": "requests\n"})
             self.assertEqual(self._run(td), 1)
 
+    def test_scan_json_reports_scanned_yarn_lock(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "repro",
+                    "dependencies": {"left-pad": "^1.3.0"},
+                }),
+                "yarn.lock": (
+                    "left-pad@^1.3.0:\n"
+                    "  version \"1.3.0\"\n"
+                ),
+            })
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                code = self._run(td)
+            self.assertEqual(code, 0)
+            data = json.loads(buf.getvalue())
+            self.assertEqual(data["files"], [])
+            self.assertIn("package.json", data["scannedFiles"])
+            self.assertIn("yarn.lock", data["scannedFiles"])
+
+    def test_scan_yarn_missing_entry_reports_high(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({
+                    "name": "repro",
+                    "dependencies": {"left-pad": "^1.3.0"},
+                }),
+                "yarn.lock": (
+                    "lodash@^4.17.0:\n"
+                    "  version \"4.17.21\"\n"
+                ),
+            })
+            _, findings = scan_dir(td)
+            finding = next(f for f in findings if f.rule == "lockfile_missing_entry")
+            self.assertEqual(finding.severity, "high")
+            self.assertEqual(finding.file, "yarn.lock")
+            self.assertEqual(finding.package, "left-pad")
+
+    def test_cli_stdout_and_stderr_are_utf8_bytes(self):
+        script = str(Path(__file__).resolve().parent / "yotta_chain.py")
+        with tempfile.TemporaryDirectory() as td:
+            write_files(td, {
+                "package.json": json.dumps({"name": "demo", "dependencies": {}}),
+            })
+            ok = subprocess.run([sys.executable, script, "scan", "--path", td],
+                                capture_output=True)
+            self.assertEqual(ok.returncode, 0)
+            self.assertIn("元链", ok.stdout.decode("utf-8"))
+            bad = subprocess.run([sys.executable, script, "scan",
+                                  "--path", str(Path(td) / "missing")],
+                                 capture_output=True)
+            self.assertEqual(bad.returncode, 4)
+            self.assertIn("路径不存在", bad.stderr.decode("utf-8"))
+
     def test_scan_no_project_exit4(self):
         with tempfile.TemporaryDirectory() as td:
             write_files(td, {"notes.txt": "nothing here"})
@@ -547,7 +605,7 @@ class TestCli(unittest.TestCase):
             self.assertEqual(data["bomFormat"], "CycloneDX")
 
     def test_version(self):
-        self.assertEqual(yc.VERSION, "0.1.3")
+        self.assertEqual(yc.VERSION, "0.1.4")
 
 
 class TestNpmLockV1(unittest.TestCase):

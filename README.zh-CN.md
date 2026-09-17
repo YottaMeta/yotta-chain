@@ -144,12 +144,14 @@ bash install.sh --list           # 列出智能体 -> 默认目录
 | `typosquat` | low | 名字与知名包编辑距离 ≤ 2，疑似拼写仿冒 |
 | `snapshot` | low | Maven 依赖使用 SNAPSHOT 版本 |
 
-## 支持的生态（v0.1.3）
+## 支持的生态（v0.1.4）
 
 - **npm** — `package.json` + `package-lock.json`（v1 / v2 / v3）/ `npm-shrinkwrap.json` / `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` + `.npmrc`（作用域仓库映射）；
 - **Python** — `requirements*.txt`（含 `--index-url` / `--extra-index-url` / `-r` 递归）、`pyproject.toml`（PEP 621 / poetry）、`poetry.lock`、`uv.lock`、`Pipfile` / `Pipfile.lock`；
 - **Maven** — `pom.xml`（基础：未固定版本 / SNAPSHOT / 可疑仓库 URL / 属性与 dependencyManagement 解析）。
 - `bun.lockb` 只识别不深度解析；`go.mod` / `Cargo.lock` 暂不支持。
+
+JSON 扫描结果同时包含 `scannedFiles`（实际读取输入）与 `files`（产生发现的文件）。干净扫描可以出现 `files: []`，但 `scannedFiles` 仍会列出清单与锁文件。
 
 ## 边界
 

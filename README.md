@@ -144,12 +144,14 @@ The agent runs the engine, reports findings by severity, and explains each rule 
 | `typosquat` | low | Name within edit distance 2 of a well-known package — review manually |
 | `snapshot` | low | Maven dependency uses a SNAPSHOT version |
 
-## Supported ecosystems (v0.1.3)
+## Supported ecosystems (v0.1.4)
 
 - **npm** — `package.json` + `package-lock.json` (v1 / v2 / v3) / `npm-shrinkwrap.json` / `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` + `.npmrc` (per-scope registries);
 - **Python** — `requirements*.txt` (with `--index-url` / `--extra-index-url` / `-r` recursion), `pyproject.toml` (PEP 621 / poetry), `poetry.lock`, `uv.lock`, `Pipfile` / `Pipfile.lock`;
 - **Maven** — `pom.xml` (basic: unpinned / SNAPSHOT / suspicious repository URLs / property + dependencyManagement resolution).
 - `bun.lockb` is recognized but not deeply parsed; `go.mod` / `Cargo.lock` are not yet supported.
+
+JSON scan output contains both `scannedFiles` (inputs actually read) and `files` (files with findings). A clean scan can have `files: []` while `scannedFiles` still lists the manifest and lock file.
 
 ## Boundaries
 

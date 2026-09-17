@@ -1,6 +1,6 @@
 ---
 name: yotta-chain
-version: 0.1.3
+version: 0.1.4
 description: 元链 —— 跨智能体的供应链依赖校验技能：零依赖自研引擎本地解析 npm（package.json / package-lock v1-v3 / yarn.lock / pnpm-lock.yaml / bun.lock / .npmrc）与 Python（requirements / pyproject.toml / poetry.lock / uv.lock / Pipfile）及 Maven pom.xml，检测依赖混淆（私有包名被公共仓库同名抢占 / 混合仓库 / 可疑仓库 URL / extra-index 回退）、lockfile 与清单不一致、缺失锁文件、未固定版本、typo-squat 仿冒命名，并生成 SBOM-lite（CycloneDX 1.5 子集）。触发：用户要在构建 / 发布 / CI 前检查项目依赖是否存在供应链风险、核对锁文件与清单是否一致、排查依赖混淆风险或生成 SBOM 时。边界：纯本地离线解析，不做在线 CVE 比对、不查询公共包仓库、不发送任何数据；结果只是「需人工复核的风险信号」，是否真实需人工核实；仅用于已获授权 / 自有资产 / 教学环境。
 license: MIT
 ---
@@ -77,7 +77,9 @@ python3 scripts/yotta_chain.py version
 
 完整规则、判定逻辑与修复指引见 `references/rules.md`。
 
-## 支持的生态（v0.1.3）
+JSON 输出同时给出 `scannedFiles`（实际读取的清单 / 锁文件）与 `files`（产生发现的文件）；无发现时 `files` 可以为空，但 `scannedFiles` 仍会列出已读取输入。
+
+## 支持的生态（v0.1.4）
 
 - **npm**：package.json + package-lock.json（v1 / v2 / v3）/ npm-shrinkwrap.json / yarn.lock / pnpm-lock.yaml / bun.lock + .npmrc（作用域仓库映射）；
 - **Python**：requirements*.txt（含 --index-url / --extra-index-url / -r 递归）、pyproject.toml（PEP 621 / poetry）、

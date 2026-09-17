@@ -32,10 +32,11 @@ from pathlib import Path
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
 
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 
 SEVERITY_ORDER = ["info", "low", "medium", "high"]
 SEVERITY_RANK = {s: i for i, s in enumerate(SEVERITY_ORDER)}
@@ -1907,7 +1908,30 @@ def _csv_escape(v):
     return s
 
 
-def _collect(project_dir, findings, sbom_pkgs, root_component):
+def _scanned_files(base, eco):
+    """Return the input files relevant to the detected ecosystems."""
+    out = []
+    if "npm" in eco:
+        out.append("package.json")
+        pj = parse_package_json(_read_text(base / "package.json")) or {}
+        lock = _select_npm_lockfile(base, pj)
+        if lock is not None:
+            out.append(lock.name)
+        if (base / ".npmrc").is_file():
+            out.append(".npmrc")
+    if "python" in eco:
+        for path in sorted(base.glob("requirements*.txt")):
+            out.append(path.name)
+        for name in ("pyproject.toml", "poetry.lock", "uv.lock",
+                     "Pipfile", "Pipfile.lock"):
+            if (base / name).is_file():
+                out.append(name)
+    if "maven" in eco and (base / "pom.xml").is_file():
+        out.append("pom.xml")
+    return sorted(set(out))
+
+
+def _collect(project_dir, findings, sbom_pkgs, root_component, scanned_files=None):
     """Run all ecosystem checks; returns sorted ecosystem list."""
     base = Path(project_dir)
     eco = []
@@ -1924,6 +1948,8 @@ def _collect(project_dir, findings, sbom_pkgs, root_component):
             root_component.update({"ecosystem": "python", "name": proj["name"], "version": str(proj.get("version") or "")})
     if check_maven(project_dir, findings, sbom_pkgs):
         eco.append("maven")
+    if scanned_files is not None:
+        scanned_files.extend(_scanned_files(base, eco))
     return eco
 
 
@@ -1935,7 +1961,8 @@ def cmd_scan(args):
     findings = []
     sbom_pkgs = []
     root_component = {}
-    eco = _collect(args.path, findings, sbom_pkgs, root_component)
+    scanned_files = []
+    eco = _collect(args.path, findings, sbom_pkgs, root_component, scanned_files=scanned_files)
     if not eco:
         print("错误：%s 下未发现支持的依赖清单/锁文件（package.json / requirements*.txt / pyproject.toml / Pipfile / pom.xml）" % base, file=sys.stderr)
         return 4
@@ -1952,6 +1979,7 @@ def cmd_scan(args):
             "version": VERSION,
             "project": str(base),
             "ecosystems": eco,
+            "scannedFiles": sorted(set(scanned_files)),
             "files": sorted({f.file for f in findings}),
             "summary": {s: sum(1 for f in findings if f.severity == s) for s in SEVERITY_ORDER},
             "findings": [f.to_dict() for f in shown],
@@ -1967,6 +1995,8 @@ def cmd_scan(args):
     else:
         lines = ["元链 yotta-chain %s — 供应链依赖校验" % VERSION]
         lines.append("项目：%s   生态：%s" % (base, ", ".join(eco)))
+        if scanned_files:
+            lines.append("输入文件：%s" % ", ".join(sorted(set(scanned_files))))
         if not shown:
             lines.append("未发现 %s 及以上风险项" % args.level)
         for s in SEVERITY_ORDER:

@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.4 (2026-09-18)
+
+- JSON 输出新增 `scannedFiles`，显式列出实际读取的 package manifest / lock 文件；`files` 继续只表示产生发现的文件，消除 `files: []` 被误读成“未读取锁文件”的歧义。
+- 统一 stdout / stderr UTF-8 编码，并补程序化捕获回归；补充自洽 yarn 夹具与缺失条目 high finding 回归。
+
 ## v0.1.3 (2026-09-17)
 
 - npm 生态新增 `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` 基础解析，锁文件存在时不再误报 `missing_lockfile`；`bun.lockb` 明确标记 `lockfile_parse_unsupported`，不做不可靠的二进制猜测。
