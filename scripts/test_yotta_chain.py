@@ -605,7 +605,7 @@ class TestCli(unittest.TestCase):
             self.assertEqual(data["bomFormat"], "CycloneDX")
 
     def test_version(self):
-        self.assertEqual(yc.VERSION, "0.1.4")
+        self.assertEqual(yc.VERSION, "0.1.5")
 
 
 class TestNpmLockV1(unittest.TestCase):

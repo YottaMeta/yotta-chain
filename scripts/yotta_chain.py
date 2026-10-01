@@ -36,7 +36,7 @@ try:
 except Exception:
     pass
 
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 
 SEVERITY_ORDER = ["info", "low", "medium", "high"]
 SEVERITY_RANK = {s: i for i, s in enumerate(SEVERITY_ORDER)}

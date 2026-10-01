@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.5 (2026-10-01)
+
+- 安装器卫生批次：`bin/install.js` / `install.sh` 统一（未知参数报错 exit 2、`--help` / `--version`、残留清理白名单、嵌套载荷保留）；由模板单一真源渲染，接入漂移门禁。
+
 ## v0.1.4 (2026-09-18)
 
 - JSON 输出新增 `scannedFiles`，显式列出实际读取的 package manifest / lock 文件；`files` 继续只表示产生发现的文件，消除 `files: []` 被误读成“未读取锁文件”的歧义。
