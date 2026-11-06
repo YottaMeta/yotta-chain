@@ -1,6 +1,6 @@
 ---
 name: yotta-chain
-version: 0.1.6
+version: 0.1.7
 description: 元链 —— 跨智能体的供应链依赖校验技能：零依赖自研引擎本地解析 npm（package.json / package-lock v1-v3 / yarn.lock / pnpm-lock.yaml / bun.lock / .npmrc）与 Python（requirements / pyproject.toml / poetry.lock / uv.lock / Pipfile）及 Maven pom.xml，检测依赖混淆（私有包名被公共仓库同名抢占 / 混合仓库 / 可疑仓库 URL / extra-index 回退）、lockfile 与清单不一致、缺失锁文件、未固定版本、typo-squat 仿冒命名，并生成 SBOM-lite（CycloneDX 1.5 子集）。触发：用户要在构建 / 发布 / CI 前检查项目依赖是否存在供应链风险、核对锁文件与清单是否一致、排查依赖混淆风险或生成 SBOM 时。边界：纯本地离线解析，不做在线 CVE 比对、不查询公共包仓库、不发送任何数据；结果只是「需人工复核的风险信号」，是否真实需人工核实；仅用于已获授权 / 自有资产 / 教学环境。
 license: MIT
 ---
@@ -99,6 +99,12 @@ JSON 输出同时给出 `scannedFiles`（实际读取的清单 / 锁文件）与
 - 不做在线 CVE 比对（那是 snyk / trivy / npm audit 的地盘），只做本地确定性解析与启发式信号；
 - 依赖混淆检测是**本地近似**：真正确认「私有包名被公共仓库抢占」需要在线核对，本引擎给的是强信号 + 人工复核；
 - 不自动修复；发现后由人工处理。
+
+## 使用范围与法律红线
+
+- 范围（Scope）：仅对已获授权、自有资产或教学环境中的项目做本地依赖校验，不扫描未授权目标。
+- 授权：运行前确认你拥有项目与依赖清单的处理权限；输出只作风险信号，不替代安全评审。
+- 法律红线：不用于规避许可、破解或未授权访问；遵守当地法律与开源许可证条款。
 
 ## 开发与校验
 

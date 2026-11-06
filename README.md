@@ -144,7 +144,7 @@ The agent runs the engine, reports findings by severity, and explains each rule 
 | `typosquat` | low | Name within edit distance 2 of a well-known package — review manually |
 | `snapshot` | low | Maven dependency uses a SNAPSHOT version |
 
-## Supported ecosystems (v0.1.4)
+## Supported ecosystems
 
 - **npm** — `package.json` + `package-lock.json` (v1 / v2 / v3) / `npm-shrinkwrap.json` / `yarn.lock` / `pnpm-lock.yaml` / `bun.lock` + `.npmrc` (per-scope registries);
 - **Python** — `requirements*.txt` (with `--index-url` / `--extra-index-url` / `-r` recursion), `pyproject.toml` (PEP 621 / poetry), `poetry.lock`, `uv.lock`, `Pipfile` / `Pipfile.lock`;

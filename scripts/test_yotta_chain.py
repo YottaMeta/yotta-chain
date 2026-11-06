@@ -13,6 +13,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+_PKG_VERSION = json.loads(
+    (Path(__file__).resolve().parent.parent / "package.json").read_text(
+        encoding="utf-8"))["version"]
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import yotta_chain as yc
 
@@ -605,7 +609,7 @@ class TestCli(unittest.TestCase):
             self.assertEqual(data["bomFormat"], "CycloneDX")
 
     def test_version(self):
-        self.assertEqual(yc.VERSION, "0.1.5")
+        self.assertEqual(yc.VERSION, _PKG_VERSION)
 
 
 class TestNpmLockV1(unittest.TestCase):
